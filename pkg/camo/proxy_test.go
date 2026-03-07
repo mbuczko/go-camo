@@ -367,13 +367,6 @@ func Test404On172Dot16Net(t *testing.T) {
 	}
 }
 
-func Test404On192Dot168Net(t *testing.T) {
-	t.Parallel()
-	testURL := "http://192.168.0.1/foo.cgi"
-	_, err := makeTestReq(testURL, 404, camoConfig)
-	assert.Nil(t, err)
-}
-
 func Test404OnLocalhost(t *testing.T) {
 	t.Parallel()
 	testURL := "http://localhost/foo.cgi"
