@@ -16,29 +16,49 @@ jobs:
         with:
           fetch-depth: 1
 
-      - name: Setup Go
-        uses: actions/setup-go@v5
+      - run: mkdir -p .cache/tools ~/go/pkg/mod ~/.cache/go-build
+      - name: Restore cached tools and go
+        id: cache-tools-and-go-restore
+        uses: actions/cache/restore@v4
         with:
-          go-version: ">=1.22.0"
-          check-latest: true
-        id: go
+          path: |
+            .cache/tools
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: cache-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('mise.lock') }}-${{ hashFiles('tools/tools.conf', '**/go.sum') }}
+          restore-keys: |
+            cache-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('mise.lock') }}-
 
+      - uses: jdx/mise-action@v3
+        with:
+          experimental: true
+      
       - name: Build
         env:
           GOPROXY: "https://proxy.golang.org"
-        run: make build
+        run: just build
 
       - name: Check
         env:
           GOPROXY: "https://proxy.golang.org"
-        run: |
-          make check
+        run: just check
 
       - name: Tests
         env:
           GOPROXY: "https://proxy.golang.org"
           CI: true
-        run: make test
+        run: just test
+
+      - name: Always save tools and go cache
+        id: cache-tools-and-go-save
+        if: always() && steps.cache-tools-and-go-restore.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          key: ${{ steps.cache-tools-and-go-restore.outputs.cache-primary-key }}
+          path: |
+            .cache/tools
+            ~/.cache/go-build
+            ~/go/pkg/mod
 
   test-qemu:
     needs: test
@@ -53,12 +73,22 @@ jobs:
         with:
           fetch-depth: 1
 
-      - name: Setup Go
-        uses: actions/setup-go@v5
+      - run: mkdir -p .cache/tools ~/go/pkg/mod ~/.cache/go-build
+      - name: Restore cached tools and go
+        id: cache-tools-and-go-restore
+        uses: actions/cache/restore@v4
         with:
-          go-version: ">=1.22.0"
-          check-latest: true
-        id: go
+          path: |
+            .cache/tools
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-${{ runner.arch }}-cache-${{ hashFiles('tools/tools.conf', '**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ runner.arch }}-cache-
+
+      - uses: jdx/mise-action@v3
+        with:
+          experimental: true
 
       - name: Install QEMU
         uses: docker/setup-qemu-action@v3
@@ -67,11 +97,22 @@ jobs:
         env:
           GOPROXY: "https://proxy.golang.org"
           GOARCH: ${{ matrix.arch }}
-        run: make build
+        run: just build
 
       - name: Tests
         env:
           GOPROXY: "https://proxy.golang.org"
           GOARCH: ${{ matrix.arch }}
           CI: true
-        run: make test
+        run: just test
+
+      - name: Always save tools and go cache
+        id: cache-tools-and-go-save
+        if: always() && steps.cache-tools-and-go-restore.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          key: ${{ steps.cache-tools-and-go-restore.outputs.cache-primary-key }}
+          path: |
+            .cache/tools
+            ~/.cache/go-build
+            ~/go/pkg/mod

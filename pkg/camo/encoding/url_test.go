@@ -8,8 +8,7 @@ import (
 	"fmt"
 	"testing"
 
-	"gotest.tools/v3/assert"
-	is "gotest.tools/v3/assert/cmp"
+	"codeberg.org/dropwhile/assert"
 )
 
 func TestEncoder(t *testing.T) {
@@ -20,7 +19,7 @@ func TestEncoder(t *testing.T) {
 		hmacKey := []byte(hmac)
 		// test specific encoder
 		encodedURL := encoder(hmacKey, sURL)
-		assert.Check(t, is.Equal(encodedURL, fmt.Sprintf("/%s/%s", edig, eURL)), "encoded url does not match")
+		assert.Equal(t, encodedURL, fmt.Sprintf("/%s/%s", edig, eURL), "encoded url does not match")
 	}
 
 	// hex
@@ -46,13 +45,13 @@ func TestDecoder(t *testing.T) {
 		hmacKey := []byte(hmac)
 		// test specific decoder
 		encodedURL, err := decoder(hmacKey, edig, eURL)
-		assert.Check(t, err, "decoded url failed to verify")
-		assert.Check(t, is.Equal(encodedURL, sURL), "decoded url does not match")
+		assert.Nil(t, err, "decoded url failed to verify")
+		assert.Equal(t, encodedURL, sURL, "decoded url does not match")
 
 		// also test generic "guessing" decoder
 		encodedURL, ok := DecodeURL(hmacKey, edig, eURL)
-		assert.Check(t, ok, "decoded url failed to verify")
-		assert.Check(t, is.Equal(encodedURL, sURL), "decoded url does not match")
+		assert.True(t, ok, "decoded url failed to verify")
+		assert.Equal(t, encodedURL, sURL, "decoded url does not match")
 	}
 
 	// hex
@@ -78,13 +77,13 @@ func TestBadDecodes(t *testing.T) {
 		hmacKey := []byte(hmac)
 		// test specific decoder
 		encodedURL, err := decoder(hmacKey, edig, eURL)
-		assert.Check(t, err != nil, "decoded url verfied when it shouldn't have")
-		assert.Check(t, is.Equal(encodedURL, ""), "decoded url result not empty")
+		assert.NotNil(t, err, "decoded url verfied when it shouldn't have")
+		assert.Equal(t, encodedURL, "", "decoded url result not empty")
 
 		// also test generic "guessing" decoder
 		encodedURL, ok := DecodeURL(hmacKey, edig, eURL)
-		assert.Check(t, !ok, "decoded url verfied when it shouldn't have")
-		assert.Check(t, is.Equal(encodedURL, ""), "decoded url result not empty")
+		assert.False(t, ok, "decoded url verfied when it shouldn't have")
+		assert.Equal(t, encodedURL, "", "decoded url result not empty")
 	}
 
 	// hex
@@ -122,37 +121,37 @@ func TestBadDecodes(t *testing.T) {
 }
 
 func BenchmarkHexEncoder(b *testing.B) {
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		HexEncodeURL([]byte("test"), "http://golang.org/doc/gopher/frontpage.png")
 	}
 }
 
 func BenchmarkB64Encoder(b *testing.B) {
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		B64EncodeURL([]byte("test"), "http://golang.org/doc/gopher/frontpage.png")
 	}
 }
 
 func BenchmarkHexDecoder(b *testing.B) {
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		HexDecodeURL([]byte("test"), "0f6def1cb147b0e84f39cbddc5ea10c80253a6f3", "687474703a2f2f676f6c616e672e6f72672f646f632f676f706865722f66726f6e74706167652e706e67")
 	}
 }
 
 func BenchmarkB64Decoder(b *testing.B) {
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		B64DecodeURL([]byte("test"), "D23vHLFHsOhPOcvdxeoQyAJTpvM", "aHR0cDovL2dvbGFuZy5vcmcvZG9jL2dvcGhlci9mcm9udHBhZ2UucG5n")
 	}
 }
 
 func BenchmarkGuessingDecoderHex(b *testing.B) {
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		DecodeURL([]byte("test"), "0f6def1cb147b0e84f39cbddc5ea10c80253a6f3", "687474703a2f2f676f6c616e672e6f72672f646f632f676f706865722f66726f6e74706167652e706e67")
 	}
 }
 
 func BenchmarkGuessingDecoderB64(b *testing.B) {
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		DecodeURL([]byte("test"), "D23vHLFHsOhPOcvdxeoQyAJTpvM", "aHR0cDovL2dvbGFuZy5vcmcvZG9jL2dvcGhlci9mcm9udHBhZ2UucG5n")
 	}
 }
